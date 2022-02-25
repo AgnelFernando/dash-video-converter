@@ -1,5 +1,5 @@
 /.DS_Store
-/app
-/docker-compose.override.yaml
-/docker-compose.yml
 /vp
+app/.DS_Store
+app/__pycache__/worker.cpython-39.pyc
+app/db/sql_app.db

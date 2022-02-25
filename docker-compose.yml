@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  web:
+    build: ./app
+    ports:
+      - 8080:8000
+    command: uvicorn api.main:app --host 0.0.0.0 --reload
+    volumes:
+      - ./app:/usr/src/app
+    env_file:
+      - ./app/api/api.env
+    depends_on:
+      - redis
+
+  worker:
+    build: 
+      context: ./app
+      dockerfile: worker/Dockerfile
+    command: celery -A worker worker --concurrency=1 --loglevel=info
+    volumes:
+      - ./app:/usr/src/app
+    env_file:
+      - ./app/worker/worker.env
+    depends_on:
+      - web
+      - redis
+
+  redis:
+    image: redis:6-alpine
+
+  dashboard: 
+    build: ./app
+    command:  flower -A worker --port=5555 --broker=redis://redis:6379/0
+    ports:
+      - 5556:5555
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - web
+      - redis
+      - worker    

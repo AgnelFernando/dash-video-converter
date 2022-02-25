@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  web:
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.app-http.rule=Host(`video-encoding.example.com`)
+      - traefik.http.routers.app-http.tls=true
+      - traefik.http.routers.app-http.tls.certresolver=letsencrypt
+
+  dashboard: 
+    build: 
+      dockerfile: Dockerfile_dummy
+
+  traefik:
+    image: traefik:v2.3
+    ports:
+      - 80:80
+      - 443:443
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./app/traefik/traefik.toml:/etc/traefik/traefik.toml
+      - traefik-public-certificates:/certificates
+
+volumes:
+  traefik-public-certificates:
