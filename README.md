@@ -109,9 +109,10 @@ A Python-based server application that automates the conversion of input videos 
   
 ```json
   {
-    "status": "processing" // or "completed", "failed"
+    "status": "processing" 
   }
   ```
+ or "completed", "failed"
 
 
 ## Directory Structure
