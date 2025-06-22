@@ -1,147 +1,195 @@
-# MPEG-DASH Video Converter
 
-A Python-based server application that automates the conversion of input videos into MPEG-DASH format using FFmpeg and Shaka Packager. It integrates with AWS S3 for storage and utilizes Docker for containerized deployment.
+# 📼 DASH Video Converter
 
-## Features
+This project is a scalable, production-ready video processing pipeline that automatically converts uploaded videos into **MPEG-DASH** format for adaptive streaming. It supports multiple resolutions (e.g., 360p, 720p), generates video thumbnails, and uploads outputs to AWS S3.
 
-- Converts videos to MPEG-DASH format with 360p and 720p resolutions.
-- Supports input and output via AWS S3 buckets.
-- Containerized using Docker and orchestrated with Docker Compose.
-- Optional callback to notify external services upon completion.
+Built using **FastAPI**, **Celery**, **Redis**, **FFmpeg**, **Shaka Packager**, and **Docker**.
 
-## Architecture Overview
+---
 
-1. **Input**: Upload your video file to the designated `INPUT_S3_BUCKET`.
-2. **Request**: Send a video encoding request to the server's API endpoint; receive a task ID in response.
-3. **Processing**: The server downloads the video from `INPUT_S3_BUCKET`, processes it into MPEG-DASH format with specified resolutions.
-4. **Output**: The processed video is uploaded to `OUTPUT_S3_BUCKET`.
-5. **Notification**: Optionally, the server sends the result of the video encoding to a specified API endpoint.
+## 🚀 Features
 
-## Prerequisites
+- 🎥 Convert videos into MPEG-DASH with 360p and 720p tracks
+- ⚡ Asynchronous task execution using Celery and Redis
+- ☁️ Upload/download videos to/from AWS S3
+- 🖼️ Generate preview thumbnails
+- 📊 Monitor tasks via [Flower](https://flower.readthedocs.io/en/latest/)
+- 🔐 API key–protected endpoints
+- 🔧 Easily deployable with Docker Compose + Traefik reverse proxy
 
-- Docker and Docker Compose installed on your system.
-- AWS credentials with access to the specified S3 buckets.
+---
 
-## Setup and Installation
+## 📁 Project Structure
 
-1. **Clone the Repository**:
-
-   ```bash
-   git clone https://github.com/AgnelFernando/dash-video-converter.git
-   cd dash-video-converter
-   ```
-
-
-2. **Configure Environment Variables**:
-
-   Create a `.env` file in the root directory with the following content:
-
-   ```env
-   AWS_ACCESS_KEY_ID=your_access_key
-   AWS_SECRET_ACCESS_KEY=your_secret_key
-   INPUT_S3_BUCKET=your_input_bucket
-   OUTPUT_S3_BUCKET=your_output_bucket
-   CALLBACK_URL=optional_callback_url
-   ```
-
-
-3. **Build and Run the Docker Containers**:
-
-   ```bash
-   docker-compose up --build
-   ```
-
-
-## Usage
-
-1. **Upload Video**:
-
-   Place your input video file into the specified `INPUT_S3_BUCKET`.
-
-2. **Send Encoding Request**:
-
-   Make a POST request to the server's API endpoint to initiate the encoding process. The server will respond with a task ID.
-
-3. **Monitor Progress**:
-
-   Use the task ID to query the status of the encoding process.
-
-4. **Retrieve Output**:
-
-   Once processing is complete, the MPEG-DASH formatted video will be available in the `OUTPUT_S3_BUCKET`.
-
-5. **Receive Notification**:
-
-   If a `CALLBACK_URL` is provided, the server will send a POST request to this URL with the result of the encoding process.
-
-## API Endpoints
-
-- **POST /encode**:
-
-  Initiates the encoding process.
-
-  **Request Body**:
-
-  
-```json
-  {
-    "video_filename": "example.mp4"
-  }
-  ```
-
-
-  **Response**:
-
-  
-```json
-  {
-    "task_id": "unique_task_identifier"
-  }
-  ```
-
-
-- **GET /status/{task_id}**:
-
-  Retrieves the status of the specified encoding task.
-
-  **Response**:
-
-  
-```json
-  {
-    "status": "processing" 
-  }
-  ```
- or "completed", "failed"
-
-
-## Directory Structure
-
-
-```plaintext
-dash-video-converter/
-├── app/
-│   ├── main.py
-│   ├── encoder.py
-│   └── utils.py
-├── docker-compose.yml
-├── docker-compose.override.yaml
-├── .gitignore
-└── README.md
 ```
 
+dash-video-converter/
+├── app/
+│   ├── api/               # FastAPI endpoints & dependencies
+│   ├── db/                # SQLAlchemy models & CRUD operations
+│   ├── worker/            # Celery config and video processing tasks
+│   ├── Dockerfile         # Shared by web and worker services
+│   └── requirements.txt   # Python dependencies
+├── docker-compose.yml
+├── docker-compose.override.yml
+└── README.md
 
-## Contributing
+````
 
-Contributions are welcome! Please open an issue or submit a pull request for any enhancements or bug fixes.
+---
 
-## License
+## 🛠️ Technologies Used
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+- **FastAPI** – REST API server
+- **Celery** – Background job queue for video processing
+- **Redis** – Message broker between FastAPI and Celery
+- **FFmpeg** – Video transcoding to different bitrates/resolutions
+- **Shaka Packager** – MPEG-DASH segmenting & manifest generation
+- **AWS S3** – Cloud storage for input/output videos
+- **Flower** – Real-time monitoring of Celery workers
+- **Docker Compose** – Service orchestration
+- **Traefik** – Optional HTTPS reverse proxy with automatic TLS
 
-## Acknowledgements
+---
 
-- [FFmpeg](https://ffmpeg.org/)
-- [Shaka Packager](https://github.com/shaka-project/shaka-packager)
-- [Docker](https://www.docker.com/)
-- [AWS S3](https://aws.amazon.com/s3/)
+## ⚙️ Getting Started
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/AgnelFernando/dash-video-converter.git
+cd dash-video-converter
+````
+
+### 2. Configure Environment Variables
+
+Create these files:
+
+* `app/api/api.env`
+* `app/worker/worker.env`
+
+And include required variables:
+
+```env
+# api.env & worker.env
+AWS_ACCESS_KEY_ID=your_key
+AWS_SECRET_ACCESS_KEY=your_secret
+S3_INPUT_BUCKET=your_input_bucket
+S3_OUTPUT_BUCKET=your_output_bucket
+S3_THUMBNAIL_OUTPUT_BUCKET=your_thumbnail_bucket
+MAIN_API_ENDPOINT=http://localhost:8080
+MAIN_API_KEY=your_api_key
+CELERY_BROKER_URL=redis://redis:6379/0
+CELERY_RESULT_BACKEND=redis://redis:6379/0
+```
+
+### 3. Build and Run the Application
+
+```bash
+docker-compose up --build
+```
+
+The services that will start:
+
+* **FastAPI** on `http://localhost:8080`
+* **Celery Worker**
+* **Redis**
+* **Flower Dashboard** on `http://localhost:5556`
+
+---
+
+## 📬 API Usage
+
+### 🔒 Authentication
+
+All endpoints require an API key via header:
+
+```http
+ApiKey: your_api_key
+```
+
+### 🎦 POST `/video/encoding`
+
+Trigger a video processing task.
+
+#### Request Body:
+
+```json
+{
+  "object_key": "your-s3-input-file.mp4",
+  "base_url": "https://cdn.example.com/output/",
+  "video_id": "abc123",
+  "has_audio": true
+}
+```
+
+#### Example Response:
+
+```json
+"e53da4fe-124b-4f6c-9f76-24fc83982f7b"  // task ID
+```
+
+---
+
+### 📊 GET `/video/encoding/{task_id}`
+
+Check status of a video encoding task.
+
+#### Example Response:
+
+```json
+{
+  "task_id": "e53da4fe-...",
+  "task_status": "SUCCESS",
+  "task_result": "abc123"
+}
+```
+
+---
+
+## 🌐 Traefik HTTPS Setup
+
+The `docker-compose.override.yml` provides support for running behind Traefik with Let's Encrypt.
+
+Update `traefik.toml` and domain entries as needed.
+
+---
+
+Great call — I provided a high-level breakdown earlier but didn’t include a dedicated “How It Works” section in the `README`. Here’s a clearly written version you can add right before the “📬 API Usage” section:
+
+---
+
+## 🔄 How it Works
+
+The video processing pipeline works in **two stages** using FastAPI, Celery, FFmpeg, and Shaka Packager.
+
+### 📥 1. Client Upload Request
+
+* A client sends a **video encoding request** (just metadata, not the file) to the FastAPI API.
+* The video must already exist in a configured **S3 input bucket**.
+
+### ⚙️ 2. Initial DASH Generation (720p)
+
+* The FastAPI server queues a task `create_initial_dash` via **Celery**.
+* This task:
+
+  * Downloads the original video from S3
+  * Transcodes it to 720p using **FFmpeg**
+  * Segments it into MPEG-DASH format using **Shaka Packager**
+  * Uploads DASH output and a **video preview thumbnail** to S3
+  * Marks the request status as `SUCCESS`
+
+### 📦 3. Secondary Resolution (360p)
+
+* Once the initial DASH is ready, a second task `create_dash` is automatically triggered.
+* This task:
+
+  * Generates the 360p version
+  * Updates the DASH manifest with multiple qualities
+  * Syncs the final output to S3 again
+
+### 🔁 4. Status & Notification
+
+* The API provides a `GET /video/encoding/{task_id}` endpoint for checking status.
+* Once a task completes (or fails), a notification is sent to a configured backend endpoint.
+
